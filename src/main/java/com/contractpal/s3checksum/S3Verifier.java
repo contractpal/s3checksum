@@ -45,10 +45,10 @@ public class S3Verifier {
             File file = new File(filePath + "/s3-checksum.csv");
             file.getParentFile().mkdirs();
             FileWriter writer = new FileWriter(file);
-            writer.write("folderId,filename,size,md5,calculatedMd5,verified,comments");
+            writer.write("folderId,filename,size,md5,calculatedMd5,verified,comments\n");
             items.forEach(object -> {
                 try {
-                    writer.write(object.getFolderId() + "," + object.getFileName() + "," + object.getSize() + "," + object.getMd5() + "," + object.getCalculatedHash() + "," + object.getVerified() + "," + object.getComments());
+                    writer.write(object.getFolderId() + "," + object.getFileName() + "," + object.getSize() + "," + object.getMd5() + "," + object.getCalculatedHash() + "," + object.getVerified() + "," + object.getComments() + '\n');
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

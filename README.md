@@ -44,7 +44,7 @@ bucketName=my-bucket \
 region=us-east-1 \
 accessKey=AKIA... \
 secretKey=... \
-java -jar target/s3checksum-1.0-SNAPSHOT.jar
+java -jar target/s3checksum-1.0.jar
 ```
 
 ## Output

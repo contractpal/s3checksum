@@ -10,14 +10,16 @@ import java.security.MessageDigest;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import java.io.InputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class S3Verifier {
     private final List<S3Object> items = new ArrayList<>();
@@ -64,8 +66,17 @@ public class S3Verifier {
 
 
     public void verifyAll() {
+        ExecutorService executor = Executors.newFixedThreadPool(50);
         for(int i = 0; i < items.size(); i++) {
-            verifyOne(i);
+            final int index = i;
+            executor.submit(() -> verifyOne(index));
+        }
+        executor.shutdown();
+        try {
+            executor.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("Verification interrupted");
         }
         verified = true;
     }
@@ -81,9 +92,9 @@ public class S3Verifier {
                     .build();
             System.out.println("Fetching object: " + row.getFolderId() + "/" + row.getFileName());
 
-            ResponseBytes<GetObjectResponse> response = client.getObjectAsBytes(request);
-            byte[] data = response.asByteArray();
-            row.setCalculatedHash(getMd5(data));
+            try (InputStream stream = client.getObject(request)) {
+                row.setCalculatedHash(getMd5(stream));
+            }
             row.verify();
             if(!row.getVerified()) {
                 row.setComments("Hash does not match");
@@ -95,6 +106,10 @@ public class S3Verifier {
             row.unverify();
             row.setComments("Object not found");
             return false;
+        }catch(IOException e) {
+            row.unverify();
+            row.setComments("Error reading object: " + e.getMessage());
+            return false;
         }catch(NoSuchAlgorithmException e) {
             row.unverify();
             row.setComments("Check code for invalid hash algorithm");
@@ -102,12 +117,16 @@ public class S3Verifier {
         }
     }
 
-    private String getMd5(byte[] bytes) throws NoSuchAlgorithmException {
+    private String getMd5(InputStream input) throws NoSuchAlgorithmException, IOException {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(bytes);
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = input.read(buffer)) != -1) {
+            md.update(buffer, 0, bytesRead);
+        }
 
         StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
+        for (byte b : md.digest()) {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();

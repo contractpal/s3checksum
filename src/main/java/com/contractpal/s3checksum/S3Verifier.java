@@ -95,8 +95,7 @@ public class S3Verifier {
             try (InputStream stream = client.getObject(request)) {
                 row.setCalculatedHash(getMd5(stream));
             }
-            row.verify();
-            if(!row.getVerified()) {
+            if(!row.verify()) {
                 row.setComments("Hash does not match");
             }
             System.out.println("Object verification: " + row.getVerified());

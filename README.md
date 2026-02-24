@@ -68,5 +68,3 @@ Results are written to `output/s3-checksum.csv` with columns:
 ```
 folderId,filename,size,md5,calculatedMd5,verified,comments
 ```
-
-Objects are verified concurrently using 50 threads with streaming downloads to minimize memory usage.

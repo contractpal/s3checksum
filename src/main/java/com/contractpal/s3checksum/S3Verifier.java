@@ -66,14 +66,14 @@ public class S3Verifier {
 
 
     public void verifyAll() {
-        ExecutorService executor = Executors.newFixedThreadPool(50);
+        ExecutorService executor = Executors.newFixedThreadPool(100);
         for(int i = 0; i < items.size(); i++) {
             final int index = i;
             executor.submit(() -> verifyOne(index));
         }
         executor.shutdown();
         try {
-            executor.awaitTermination(1, TimeUnit.HOURS);
+            executor.awaitTermination(15, TimeUnit.HOURS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.out.println("Verification interrupted");

@@ -47,6 +47,20 @@ secretKey=... \
 java -jar target/s3checksum-1.0.jar
 ```
 
+### Running from IntelliJ
+
+1. Open the project in IntelliJ
+2. Go to **Run > Edit Configurations**
+3. Create a new **Application** configuration
+4. Set the main class to `com.contractpal.s3checksum.Main`
+5. Under **Environment variables**, click the icon and add:
+   - `inputFilePath` = path to your CSV
+   - `bucketName` = your S3 bucket name
+   - `region` = your AWS region
+   - `accessKey` = your AWS access key
+   - `secretKey` = your AWS secret key
+6. Click **Apply** and **Run**
+
 ## Output
 
 Results are written to `output/s3-checksum.csv` with columns:

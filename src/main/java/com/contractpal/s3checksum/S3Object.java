@@ -15,7 +15,7 @@ public class S3Object {
 
     public S3Object(String folderId, String fileName, String checksum, int size) {
         this.folderId = folderId;
-        this.fileName = fileName;
+        this.fileName = fileName.isEmpty() ? null : fileName;
         this.md5 = checksum;
         this.size = size;
         this.verified = false;

@@ -86,9 +86,10 @@ public class S3Verifier {
         S3Object row = items.get(index);
         try{
 
+            String key = row.getFolderId() != null && !row.getFolderId().isEmpty() ? row.getFolderId() + "/" + row.getFileName() : row.getFileName();
             GetObjectRequest request = GetObjectRequest.builder()
                     .bucket(this.bucket)
-                    .key(row.getFolderId() + "/" + row.getFileName())
+                    .key(key)
                     .build();
             System.out.println("Fetching object: " + row.getFolderId() + "/" + row.getFileName());
 
@@ -123,12 +124,7 @@ public class S3Verifier {
         while ((bytesRead = input.read(buffer)) != -1) {
             md.update(buffer, 0, bytesRead);
         }
-
-        StringBuilder sb = new StringBuilder();
-        for (byte b : md.digest()) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+        return java.util.Base64.getEncoder().encodeToString(md.digest());
     }
 
 
@@ -146,6 +142,9 @@ public class S3Verifier {
                 }
                 String data = myReader.nextLine();
                 String[] row = data.split(",");
+                for (int i = 0; i < row.length; i++) {
+                    row[i] = row[i].replace("\"", "").trim();
+                }
                 items.add(new S3Object(row[0], row[1], row[2], Integer.parseInt(row[3])));
             }
         } catch (FileNotFoundException e) {

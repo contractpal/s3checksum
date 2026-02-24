@@ -132,15 +132,15 @@ public class S3Verifier {
     private void readFile() {
         File csv = new File(csvPath);
 
-        try (Scanner myReader = new Scanner(csv)) {
+        try (Scanner reader = new Scanner(csv)) {
             boolean colsRead = false;
-            while (myReader.hasNextLine()) {
+            while (reader.hasNextLine()) {
                 if (!colsRead) {
-                    myReader.nextLine();
+                    reader.nextLine();
                     colsRead = true;
                     continue;
                 }
-                String data = myReader.nextLine();
+                String data = reader.nextLine();
                 String[] row = data.split(",");
                 for (int i = 0; i < row.length; i++) {
                     row[i] = row[i].replace("\"", "").trim();

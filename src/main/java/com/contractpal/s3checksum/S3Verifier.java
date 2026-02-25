@@ -1,7 +1,6 @@
 package com.contractpal.s3checksum;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;

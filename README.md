@@ -56,7 +56,6 @@ java -jar target/s3checksum-1.0.jar
 3. Create a new **Application** configuration
 4. Set the main class to `com.contractpal.s3checksum.Main`
 5. Under **Environment variables**, click the icon and add:
-   - `inputFilePath` = path to your CSV
    - `bucketName` = your S3 bucket name
    - `region` = your AWS region
    - `accessKey` = your AWS access key

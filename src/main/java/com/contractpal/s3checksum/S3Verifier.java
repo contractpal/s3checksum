@@ -23,14 +23,12 @@ import java.util.concurrent.TimeUnit;
 
 public class S3Verifier {
     private final List<S3Object> items = new ArrayList<>();
-    private final String csvPath;
     private final String bucket;
     private final S3Client client;
     private Boolean verified = false;
 
-    public S3Verifier(String csvPath, String bucket, Region region, String accessKey, String secretKey) {
+    public S3Verifier(String bucket, Region region, String accessKey, String secretKey) {
         this.bucket = bucket;
-        this.csvPath = csvPath;
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
         client = S3Client.builder()
                 .region(region)
@@ -130,9 +128,13 @@ public class S3Verifier {
 
 
     private void readFile() {
-        File csv = new File(csvPath);
 
-        try (Scanner reader = new Scanner(csv)) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(this.bucket)
+                .key("index.csv")
+                .build();
+
+        try (Scanner reader = new Scanner(client.getObject(request))) {
             boolean colsRead = false;
             while (reader.hasNextLine()) {
                 if (!colsRead) {
@@ -147,9 +149,6 @@ public class S3Verifier {
                 }
                 items.add(new S3Object(row[0], row[1], row[2], Integer.parseInt(row[3])));
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
         }
     }
 

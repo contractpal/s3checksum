@@ -3,7 +3,7 @@ import software.amazon.awssdk.regions.Region;
 
 public class Main {
     public static void main(String[] args) {
-        String[] required = {"inputFilePath", "bucketName", "region", "accessKey", "secretKey"};
+        String[] required = {"bucketName", "region", "accessKey", "secretKey"};
         for (String var : required) {
             if (System.getenv(var) == null || System.getenv(var).isEmpty()) {
                 System.out.println("ERROR: Missing required environment variable: " + var);
@@ -12,7 +12,7 @@ public class Main {
         }
 
         long start = System.currentTimeMillis();
-        S3Verifier verifier = new S3Verifier(System.getenv("inputFilePath"), System.getenv("bucketName"), Region.of(System.getenv("region")), System.getenv("accessKey"), System.getenv("secretKey"));
+        S3Verifier verifier = new S3Verifier(System.getenv("bucketName"), Region.of(System.getenv("region")), System.getenv("accessKey"), System.getenv("secretKey"));
         verifier.verifyAll();
         if(!verifier.exportResultToFile("output")){
             System.out.println("ERROR exporting results!");

@@ -11,13 +11,16 @@ Verifies the integrity of files stored in an S3 bucket by comparing their MD5 ch
 
 | Variable | Description |
 |---|---|
-| `inputFilePath` | Path to the input CSV file |
 | `bucketName` | Name of the S3 bucket |
 | `region` | AWS region (e.g. `us-east-1`) |
 | `accessKey` | AWS access key ID |
 | `secretKey` | AWS secret access key |
 
 ## Input CSV Format
+
+The CSV will be generated as part of the export and will be saved in the bucket as index.csv.
+
+This will automatically be read in and will throw an exception if it's not present. It is not necessary to pass this file in as a param.
 
 The input CSV must have a header row and the following columns:
 
@@ -39,7 +42,6 @@ The full S3 key is constructed as `folderId/fileName`.
 mvn clean package
 
 # Run
-inputFilePath=data.csv \
 bucketName=my-bucket \
 region=us-east-1 \
 accessKey=AKIA... \

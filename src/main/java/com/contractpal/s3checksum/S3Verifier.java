@@ -9,9 +9,11 @@ import java.security.MessageDigest;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import java.io.InputStream;
 import java.io.FileWriter;
@@ -125,15 +127,9 @@ public class S3Verifier {
     }
 
 
-
-    private void readFile() {
-
-        GetObjectRequest request = GetObjectRequest.builder()
-                .bucket(this.bucket)
-                .key("index.csv")
-                .build();
-
-        try (Scanner reader = new Scanner(client.getObject(request))) {
+    private List<S3Object> parseFile(ResponseInputStream<GetObjectResponse> response) {
+        List<S3Object> result = new ArrayList<>();
+        try (Scanner reader = new Scanner(response)) {
             boolean colsRead = false;
             while (reader.hasNextLine()) {
                 if (!colsRead) {
@@ -146,8 +142,31 @@ public class S3Verifier {
                 for (int i = 0; i < row.length; i++) {
                     row[i] = row[i].replace("\"", "").trim();
                 }
-                items.add(new S3Object(row[0], row[1], row[2], Integer.parseInt(row[3])));
+                result.add(new S3Object(row[0], row[1], row[2], Integer.parseInt(row[3])));
             }
+        }
+        return result;
+    }
+
+    private void readFile() {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(this.bucket)
+                .key("ps-index.csv")
+                .build();
+        GetObjectRequest request2 = GetObjectRequest.builder()
+                .bucket(this.bucket)
+                .key("am-index.csv")
+                .build();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        var future1 = executor.submit(() -> parseFile(client.getObject(request)));
+        var future2 = executor.submit(() -> parseFile(client.getObject(request2)));
+        executor.shutdown();
+        try {
+            items.addAll(future1.get());
+            items.addAll(future2.get());
+        } catch (Exception e) {
+            System.out.println("Error reading index files: " + e.getMessage());
         }
     }
 

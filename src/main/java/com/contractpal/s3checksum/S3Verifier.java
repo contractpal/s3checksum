@@ -63,6 +63,7 @@ public class S3Verifier {
     public void verifyAll() {
         AtomicInteger completed = new AtomicInteger(0);
         int total = items.size();
+        System.out.println("Starting file verification. Total of " + total + " file(s)");
         ExecutorService executor = Executors.newFixedThreadPool(100);
         for(int i = 0; i < total; i++) {
             final int index = i;

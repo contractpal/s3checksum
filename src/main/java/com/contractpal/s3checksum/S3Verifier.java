@@ -16,8 +16,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import java.io.InputStream;
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -42,19 +44,13 @@ public class S3Verifier {
         if(!verified) {
             verifyAll();
         }
-        try{
-            File file = new File(filePath + "/s3-checksum.csv");
-            file.getParentFile().mkdirs();
-            FileWriter writer = new FileWriter(file);
+        File file = new File(filePath + "/s3-checksum.csv");
+        file.getParentFile().mkdirs();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("folderId,filename,size,md5,calculatedMd5,verified,comments\n");
-            items.forEach(object -> {
-                try {
-                    writer.write(object.getFolderId() + "," + object.getFileName() + "," + object.getSize() + "," + object.getMd5() + "," + object.getCalculatedHash() + "," + object.getVerified() + "," + object.getComments() + '\n');
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            writer.close();
+            for (S3Object object : items) {
+                writer.write(object.getFolderId() + "," + object.getFileName() + "," + object.getSize() + "," + object.getMd5() + "," + object.getCalculatedHash() + "," + object.getVerified() + "," + object.getComments() + '\n');
+            }
             System.out.println("Results written to: " + filePath + "/s3-checksum.csv");
             return true;
         }catch(IOException t) {
@@ -65,10 +61,18 @@ public class S3Verifier {
 
 
     public void verifyAll() {
+        AtomicInteger completed = new AtomicInteger(0);
+        int total = items.size();
         ExecutorService executor = Executors.newFixedThreadPool(100);
-        for(int i = 0; i < items.size(); i++) {
+        for(int i = 0; i < total; i++) {
             final int index = i;
-            executor.submit(() -> verifyOne(index));
+            executor.submit(() -> {
+                verifyOne(index);
+                int count = completed.incrementAndGet();
+                if (count % 100 == 0 || count == total) {
+                    System.out.println("Progress: " + count + "/" + total);
+                }
+            });
         }
         executor.shutdown();
         try {
@@ -90,15 +94,12 @@ public class S3Verifier {
                     .bucket(this.bucket)
                     .key(key)
                     .build();
-            System.out.println("Fetching object: " + row.getFolderId() + "/" + row.getFileName());
-
             try (InputStream stream = client.getObject(request)) {
                 row.setCalculatedHash(getMd5(stream));
             }
             if(!row.verify()) {
                 row.setComments("Hash does not match");
             }
-            System.out.println("Object verification: " + row.getVerified());
             return row.getVerified();
         }catch(NoSuchKeyException e) {
             System.out.println("ERROR: object not found " + row.getFolderId() + "/" + row.getFileName());
